@@ -17,8 +17,8 @@ let state = {
 };
 
 // ── INIT ──────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadFromStorage();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadFromStorage();
   if (state.items.length === 0) {
     // Start with one empty item
     addItem();
@@ -29,8 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── STORAGE ───────────────────────────────────────────────────
-function saveToStorage() {
-  // Save state without image blobs (they're in DOM)
+const DB_NAME = 'vibram_brand_check_db';
+const STORE_NAME = 'state_store';
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveToStorage() {
   const toSave = {
     items: state.items.map(item => ({
       ...item,
@@ -44,17 +60,37 @@ function saveToStorage() {
     brandGuidePdf3: state.brandGuidePdf3,
   };
   try {
-    localStorage.setItem('vibram_brand_check', JSON.stringify(toSave));
+    const db = await initDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(toSave, 'appState');
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   } catch(e) {
-    // Storage full – images too large; skip silently
+    console.error('Failed to save to IndexedDB', e);
   }
 }
 
-function loadFromStorage() {
+async function loadFromStorage() {
   try {
-    const raw = localStorage.getItem('vibram_brand_check');
-    if (raw) {
-      const data = JSON.parse(raw);
+    const db = await initDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const request = tx.objectStore(STORE_NAME).get('appState');
+    let data = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    if (!data) {
+      const raw = localStorage.getItem('vibram_brand_check');
+      if (raw) {
+        data = JSON.parse(raw);
+        tx.objectStore(STORE_NAME).put(data, 'appState');
+      }
+    }
+
+    if (data) {
       state.items = data.items || [];
       state.currentReviewer = data.currentReviewer || 'CEO';
       state.nextId = data.nextId || (state.items.length + 1);
@@ -63,6 +99,7 @@ function loadFromStorage() {
       state.brandGuidePdf3 = data.brandGuidePdf3 || null;
     }
   } catch(e) {
+    console.error('Failed to load from IndexedDB', e);
     state.items = [];
   }
 }
@@ -382,10 +419,17 @@ function handlePdfUpload(input, slot) {
     showToast('PDFファイルを選択してください', 'neutral');
     return;
   }
+  
+  const confirmSave = confirm(`選択したPDFを保存しますか？`);
+  if (!confirmSave) {
+    input.value = '';
+    return;
+  }
+
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     state[`brandGuidePdf${slot}`] = e.target.result;
-    saveToStorage();
+    await saveToStorage();
     renderPdfModal();
     showToast(`ガイド${slot}を登録しました`, 'approve');
   };
@@ -411,9 +455,12 @@ function renderPdfModal() {
   }
 }
 
-function clearPdf(slot) {
+async function clearPdf(slot) {
+  const confirmDelete = confirm(`ガイド${slot}を削除してもよろしいですか？`);
+  if (!confirmDelete) return;
+
   state[`brandGuidePdf${slot}`] = null;
-  saveToStorage();
+  await saveToStorage();
   renderPdfModal();
   showToast(`ガイド${slot}を削除しました`, 'neutral');
 }
