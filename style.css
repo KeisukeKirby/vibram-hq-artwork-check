@@ -257,6 +257,12 @@ body {
   padding-left: 20px;
   border-left: 1px solid var(--border);
 }
+.pdf-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
 .pdf-slot {
   display: flex;
   align-items: center;

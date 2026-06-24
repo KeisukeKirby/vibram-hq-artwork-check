@@ -66,20 +66,21 @@
         <button class="reviewer-tab active" data-reviewer="CEO" onclick="selectReviewer('CEO', this)">CEO</button>
       </div>
       <div class="pdf-section">
+        <span class="pdf-section-label">Brand Guideline:</span>
         <div class="pdf-slot" id="pdfSlot1">
           <input type="file" id="pdfUpload1" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(this, 1)" />
-          <button class="btn-pdf" id="btnPdfUpload1" onclick="document.getElementById('pdfUpload1').click()">ガイド1</button>
-          <a id="pdfLink1" href="#" target="_blank" style="display:none;" class="pdf-link">📄 1</a>
+          <button class="btn-pdf" id="btnPdfUpload1" onclick="document.getElementById('pdfUpload1').click()">ENをUP</button>
+          <a id="pdfLink1" href="#" target="_blank" style="display:none;" class="pdf-link">EN</a>
         </div>
         <div class="pdf-slot" id="pdfSlot2">
           <input type="file" id="pdfUpload2" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(this, 2)" />
-          <button class="btn-pdf" id="btnPdfUpload2" onclick="document.getElementById('pdfUpload2').click()">ガイド2</button>
-          <a id="pdfLink2" href="#" target="_blank" style="display:none;" class="pdf-link">📄 2</a>
+          <button class="btn-pdf" id="btnPdfUpload2" onclick="document.getElementById('pdfUpload2').click()">THをUP</button>
+          <a id="pdfLink2" href="#" target="_blank" style="display:none;" class="pdf-link">TH</a>
         </div>
         <div class="pdf-slot" id="pdfSlot3">
           <input type="file" id="pdfUpload3" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(this, 3)" />
-          <button class="btn-pdf" id="btnPdfUpload3" onclick="document.getElementById('pdfUpload3').click()">ガイド3</button>
-          <a id="pdfLink3" href="#" target="_blank" style="display:none;" class="pdf-link">📄 3</a>
+          <button class="btn-pdf" id="btnPdfUpload3" onclick="document.getElementById('pdfUpload3').click()">JPをUP</button>
+          <a id="pdfLink3" href="#" target="_blank" style="display:none;" class="pdf-link">JP</a>
         </div>
       </div>
       <button class="btn-export" onclick="exportData()">

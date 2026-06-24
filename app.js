@@ -359,16 +359,19 @@ function handlePdfUpload(input, slot) {
 }
 
 function renderPdfLinks() {
+  const labels = ['EN', 'TH', 'JP'];
   for (let i = 1; i <= 3; i++) {
     const link = document.getElementById(`pdfLink${i}`);
     const btn = document.getElementById(`btnPdfUpload${i}`);
+    const label = labels[i-1];
+
     if (state[`brandGuidePdf${i}`]) {
       link.href = state[`brandGuidePdf${i}`];
       link.style.display = 'inline-block';
       if (btn) btn.innerHTML = '変更';
     } else {
       link.style.display = 'none';
-      if (btn) btn.innerHTML = `ガイド${i}`;
+      if (btn) btn.innerHTML = `${label}をUP`;
     }
   }
 }
