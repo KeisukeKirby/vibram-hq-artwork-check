@@ -252,48 +252,74 @@ body {
 .pdf-section {
   display: flex;
   align-items: center;
-  gap: 12px;
   margin-left: 20px;
   padding-left: 20px;
   border-left: 1px solid var(--border);
 }
-.pdf-section-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-right: 4px;
-}
-.pdf-slot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-pdf {
+.btn-pdf-modal {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
+  padding: 8px 16px;
+  background: var(--bg-surface);
   border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
 }
-.btn-pdf:hover {
-  background: var(--bg-input-focus);
+.btn-pdf-modal:hover {
+  background: var(--bg-input);
+  border-color: var(--border-hover);
+}
+.pdf-modal-content {
+  max-width: 400px;
+  padding: 30px;
+  text-align: center;
+}
+.pdf-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.pdf-modal-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background: var(--bg-body);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.pdf-lang-btn {
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
 }
-.pdf-link {
+.pdf-lang-btn:hover {
+  color: var(--gold);
+}
+.pdf-lang-btn.has-pdf {
+  color: var(--gold);
+  text-decoration: underline;
+}
+.pdf-status {
   font-size: 12px;
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 600;
+  color: var(--text-muted);
 }
-.pdf-link:hover { text-decoration: underline; }
+.pdf-clear-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #ffe3e3;
+  color: var(--red);
+  border: none;
+  cursor: pointer;
+}
 
 /* ── FILTER BAR ──────────────────────────────────────── */
 .filter-bar {

@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   }
   updateStats();
-  renderPdfLinks();
 });
 
 // ── STORAGE ───────────────────────────────────────────────────
@@ -341,7 +340,31 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeLightbox();
 });
 
-// ── PDF UPLOAD ────────────────────────────────────────────────
+// ── PDF UPLOAD MODAL ──────────────────────────────────────────
+
+function openPdfModal() {
+  renderPdfModal();
+  document.getElementById('pdfModal').classList.add('show');
+}
+
+function closePdfModal() {
+  document.getElementById('pdfModal').classList.remove('show');
+}
+
+function handlePdfClick(slot) {
+  const pdfData = state[`brandGuidePdf${slot}`];
+  if (pdfData) {
+    // Open in new tab using a temporary link
+    const a = document.createElement('a');
+    a.href = pdfData;
+    a.target = '_blank';
+    a.click();
+  } else {
+    // Trigger upload
+    document.getElementById(`pdfUpload${slot}`).click();
+  }
+}
+
 function handlePdfUpload(input, slot) {
   const file = input.files[0];
   if (!file || file.type !== 'application/pdf') {
@@ -352,28 +375,36 @@ function handlePdfUpload(input, slot) {
   reader.onload = (e) => {
     state[`brandGuidePdf${slot}`] = e.target.result;
     saveToStorage();
-    renderPdfLinks();
-    showToast(`ガイド${slot}をアップロードしました`, 'approve');
+    renderPdfModal();
+    showToast(`ガイド${slot}を登録しました`, 'approve');
   };
   reader.readAsDataURL(file);
 }
 
-function renderPdfLinks() {
-  const labels = ['EN', 'TH', 'JP'];
+function renderPdfModal() {
   for (let i = 1; i <= 3; i++) {
-    const link = document.getElementById(`pdfLink${i}`);
-    const btn = document.getElementById(`btnPdfUpload${i}`);
-    const label = labels[i-1];
-
+    const status = document.getElementById(`pdfStatus${i}`);
+    const clearBtn = document.getElementById(`pdfClear${i}`);
+    const btn = document.getElementById(`pdfBtn${i}`);
     if (state[`brandGuidePdf${i}`]) {
-      link.href = state[`brandGuidePdf${i}`];
-      link.style.display = 'inline-block';
-      if (btn) btn.innerHTML = '変更';
+      status.textContent = '✓ 登録済';
+      status.style.color = '#33a34a'; // green
+      btn.classList.add('has-pdf');
+      clearBtn.style.display = 'inline-block';
     } else {
-      link.style.display = 'none';
-      if (btn) btn.innerHTML = `${label}をUP`;
+      status.textContent = '未登録';
+      status.style.color = 'var(--text-muted)';
+      btn.classList.remove('has-pdf');
+      clearBtn.style.display = 'none';
     }
   }
+}
+
+function clearPdf(slot) {
+  state[`brandGuidePdf${slot}`] = null;
+  saveToStorage();
+  renderPdfModal();
+  showToast(`ガイド${slot}を削除しました`, 'neutral');
 }
 
 // ── STATS ─────────────────────────────────────────────────────
