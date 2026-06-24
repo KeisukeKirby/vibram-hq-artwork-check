@@ -344,11 +344,11 @@ document.addEventListener('keydown', (e) => {
 
 function openPdfModal() {
   renderPdfModal();
-  document.getElementById('pdfModal').classList.add('show');
+  document.getElementById('pdfModal').classList.add('open');
 }
 
 function closePdfModal() {
-  document.getElementById('pdfModal').classList.remove('show');
+  document.getElementById('pdfModal').classList.remove('open');
 }
 
 function handlePdfClick(slot) {
