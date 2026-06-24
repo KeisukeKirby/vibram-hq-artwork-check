@@ -296,7 +296,7 @@ body {
 .pdf-lang-btn {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #ffffff;
   cursor: pointer;
   transition: var(--transition);
 }

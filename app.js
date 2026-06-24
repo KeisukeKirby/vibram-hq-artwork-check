@@ -354,11 +354,22 @@ function closePdfModal() {
 function handlePdfClick(slot) {
   const pdfData = state[`brandGuidePdf${slot}`];
   if (pdfData) {
-    // Open in new tab using a temporary link
-    const a = document.createElement('a');
-    a.href = pdfData;
-    a.target = '_blank';
-    a.click();
+    try {
+      // Convert Data URI to Blob to prevent about:blank#blocked in Chrome
+      const byteString = atob(pdfData.split(',')[1]);
+      const mimeString = pdfData.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    } catch (err) {
+      console.error(err);
+      showToast('PDFを開けませんでした', 'neutral');
+    }
   } else {
     // Trigger upload
     document.getElementById(`pdfUpload${slot}`).click();
