@@ -7,11 +7,13 @@
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
   items: [],
-  currentReviewer: 'Creative Director',
+  currentReviewer: 'CEO',
   filterStatus: 'all',
   searchQuery: '',
   nextId: 1,
-  brandGuidePdf: null,
+  brandGuidePdf1: null,
+  brandGuidePdf2: null,
+  brandGuidePdf3: null,
 };
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -24,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   }
   updateStats();
-  renderPdfLink();
+  renderPdfLinks();
 });
 
 // ── STORAGE ───────────────────────────────────────────────────
@@ -38,7 +40,9 @@ function saveToStorage() {
     })),
     currentReviewer: state.currentReviewer,
     nextId: state.nextId,
-    brandGuidePdf: state.brandGuidePdf,
+    brandGuidePdf1: state.brandGuidePdf1,
+    brandGuidePdf2: state.brandGuidePdf2,
+    brandGuidePdf3: state.brandGuidePdf3,
   };
   try {
     localStorage.setItem('vibram_brand_check', JSON.stringify(toSave));
@@ -53,9 +57,11 @@ function loadFromStorage() {
     if (raw) {
       const data = JSON.parse(raw);
       state.items = data.items || [];
-      state.currentReviewer = data.currentReviewer || 'Creative Director';
+      state.currentReviewer = data.currentReviewer || 'CEO';
       state.nextId = data.nextId || (state.items.length + 1);
-      state.brandGuidePdf = data.brandGuidePdf || null;
+      state.brandGuidePdf1 = data.brandGuidePdf1 || null;
+      state.brandGuidePdf2 = data.brandGuidePdf2 || null;
+      state.brandGuidePdf3 = data.brandGuidePdf3 || null;
     }
   } catch(e) {
     state.items = [];
@@ -336,7 +342,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── PDF UPLOAD ────────────────────────────────────────────────
-function handlePdfUpload(input) {
+function handlePdfUpload(input, slot) {
   const file = input.files[0];
   if (!file || file.type !== 'application/pdf') {
     showToast('PDFファイルを選択してください', 'neutral');
@@ -344,24 +350,26 @@ function handlePdfUpload(input) {
   }
   const reader = new FileReader();
   reader.onload = (e) => {
-    state.brandGuidePdf = e.target.result;
+    state[`brandGuidePdf${slot}`] = e.target.result;
     saveToStorage();
-    renderPdfLink();
-    showToast('ガイドPDFをアップロードしました', 'approve');
+    renderPdfLinks();
+    showToast(`ガイド${slot}をアップロードしました`, 'approve');
   };
   reader.readAsDataURL(file);
 }
 
-function renderPdfLink() {
-  const link = document.getElementById('pdfLink');
-  const btn = document.getElementById('btnPdfUpload');
-  if (state.brandGuidePdf) {
-    link.href = state.brandGuidePdf;
-    link.style.display = 'inline-block';
-    if (btn) btn.innerHTML = 'ガイドPDFを変更';
-  } else {
-    link.style.display = 'none';
-    if (btn) btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="12"></line><line x1="15" y1="15" x2="12" y2="12"></line></svg> ガイドPDFをアップロード';
+function renderPdfLinks() {
+  for (let i = 1; i <= 3; i++) {
+    const link = document.getElementById(`pdfLink${i}`);
+    const btn = document.getElementById(`btnPdfUpload${i}`);
+    if (state[`brandGuidePdf${i}`]) {
+      link.href = state[`brandGuidePdf${i}`];
+      link.style.display = 'inline-block';
+      if (btn) btn.innerHTML = '変更';
+    } else {
+      link.style.display = 'none';
+      if (btn) btn.innerHTML = `ガイド${i}`;
+    }
   }
 }
 

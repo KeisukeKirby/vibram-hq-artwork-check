@@ -252,10 +252,15 @@ body {
 .pdf-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-left: 20px;
   padding-left: 20px;
   border-left: 1px solid var(--border);
+}
+.pdf-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .btn-pdf {
   display: inline-flex;
