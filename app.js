@@ -7,10 +7,11 @@
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
   items: [],
-  currentReviewer: 'Brand Manager',
+  currentReviewer: 'Creative Director',
   filterStatus: 'all',
   searchQuery: '',
   nextId: 1,
+  brandGuidePdf: null,
 };
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   }
   updateStats();
+  renderPdfLink();
 });
 
 // ── STORAGE ───────────────────────────────────────────────────
@@ -36,6 +38,7 @@ function saveToStorage() {
     })),
     currentReviewer: state.currentReviewer,
     nextId: state.nextId,
+    brandGuidePdf: state.brandGuidePdf,
   };
   try {
     localStorage.setItem('vibram_brand_check', JSON.stringify(toSave));
@@ -50,8 +53,9 @@ function loadFromStorage() {
     if (raw) {
       const data = JSON.parse(raw);
       state.items = data.items || [];
-      state.currentReviewer = data.currentReviewer || 'Brand Manager';
+      state.currentReviewer = data.currentReviewer || 'Creative Director';
       state.nextId = data.nextId || (state.items.length + 1);
+      state.brandGuidePdf = data.brandGuidePdf || null;
     }
   } catch(e) {
     state.items = [];
@@ -331,6 +335,36 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeLightbox();
 });
 
+// ── PDF UPLOAD ────────────────────────────────────────────────
+function handlePdfUpload(input) {
+  const file = input.files[0];
+  if (!file || file.type !== 'application/pdf') {
+    showToast('PDFファイルを選択してください', 'neutral');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.brandGuidePdf = e.target.result;
+    saveToStorage();
+    renderPdfLink();
+    showToast('ガイドPDFをアップロードしました', 'approve');
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPdfLink() {
+  const link = document.getElementById('pdfLink');
+  const btn = document.getElementById('btnPdfUpload');
+  if (state.brandGuidePdf) {
+    link.href = state.brandGuidePdf;
+    link.style.display = 'inline-block';
+    if (btn) btn.innerHTML = 'ガイドPDFを変更';
+  } else {
+    link.style.display = 'none';
+    if (btn) btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="12"></line><line x1="15" y1="15" x2="12" y2="12"></line></svg> ガイドPDFをアップロード';
+  }
+}
+
 // ── STATS ─────────────────────────────────────────────────────
 function updateStats() {
   const counts = { pending: 0, approved: 0, rejected: 0 };
@@ -574,6 +608,7 @@ function renderUploadArea(item, field, label) {
       />
       ${hasSrc ? `
         <div class="upload-overlay">
+          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">拡大</button>
           <button class="upload-overlay-btn" onclick="event.stopPropagation(); triggerUpload(event, ${item.id}, '${field}')">画像を変更</button>
           <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearImage(${item.id}, '${field}')">削除</button>
         </div>
