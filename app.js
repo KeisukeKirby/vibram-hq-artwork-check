@@ -603,13 +603,11 @@ function renderUploadArea(item, field, label) {
         id="file-${item.id}-${field}"
         onchange="handleFileSelect(${item.id}, '${field}', this.files[0])"
       />
-      ${hasSrc ? '' : `
-        <div class="upload-placeholder">
-          <div class="upload-icon">🖼️</div>
-          <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップ</div>
-          <div class="upload-text-sub">JPG, PNG, WebP, SVG 対応</div>
-        </div>
-      `}
+      <div class="upload-placeholder" style="display:${hasSrc ? 'none' : 'flex'};">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップ</div>
+        <div class="upload-text-sub">JPG, PNG, WebP, SVG 対応</div>
+      </div>
       <img
         class="upload-preview"
         src="${hasSrc ? escHtml(item[field]) : ''}"
@@ -617,13 +615,11 @@ function renderUploadArea(item, field, label) {
         style="display:${hasSrc ? 'block' : 'none'};"
         onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"
       />
-      ${hasSrc ? `
-        <div class="upload-overlay">
-          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">拡大</button>
-          <button class="upload-overlay-btn" onclick="event.stopPropagation(); triggerUpload(event, ${item.id}, '${field}')">画像を変更</button>
-          <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearImage(${item.id}, '${field}')">削除</button>
-        </div>
-      ` : ''}
+      <div class="upload-overlay">
+        <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">拡大</button>
+        <button class="upload-overlay-btn" onclick="event.stopPropagation(); triggerUpload(event, ${item.id}, '${field}')">画像を変更</button>
+        <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearImage(${item.id}, '${field}')">削除</button>
+      </div>
     </div>
   `;
 }

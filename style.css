@@ -528,9 +528,13 @@ body {
   justify-content: center;
   gap: 10px;
   opacity: 0;
+  pointer-events: none;
   transition: var(--transition);
 }
-.upload-area.has-image:hover .upload-overlay { opacity: 1; }
+.upload-area.has-image:hover .upload-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
 .upload-overlay-btn {
   padding: 7px 14px;
   border-radius: var(--radius-sm);
