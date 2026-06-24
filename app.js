@@ -144,43 +144,57 @@ function approveItem(id) {
   const item = state.items.find(i => i.id === id);
   if (!item) return;
 
+  const existingReview = item.reviews.find(r => r.reviewer === state.currentReviewer);
+
   // Remove existing review from this reviewer
   item.reviews = item.reviews.filter(r => r.reviewer !== state.currentReviewer);
-  item.reviews.push({
-    reviewer: state.currentReviewer,
-    status: 'approved',
-    comment: '',
-    timestamp: Date.now(),
-  });
+
+  if (existingReview && existingReview.status === 'approved') {
+    showToast(`🔄 ${state.currentReviewer} の承認を取り消しました`, 'neutral');
+  } else {
+    item.reviews.push({
+      reviewer: state.currentReviewer,
+      status: 'approved',
+      comment: '',
+      timestamp: Date.now(),
+    });
+    showToast(`✅ ${state.currentReviewer} が承認しました`, 'approve');
+  }
 
   recalcStatus(item);
   saveToStorage();
   updateCardApproval(id);
   updateStats();
-  showToast(`✅ ${state.currentReviewer} が承認しました`, 'approve');
 }
 
 function rejectItem(id) {
   const item = state.items.find(i => i.id === id);
   if (!item) return;
 
+  const existingReview = item.reviews.find(r => r.reviewer === state.currentReviewer);
+
   item.reviews = item.reviews.filter(r => r.reviewer !== state.currentReviewer);
-  item.reviews.push({
-    reviewer: state.currentReviewer,
-    status: 'rejected',
-    comment: '',
-    timestamp: Date.now(),
-  });
+
+  const block = document.querySelector(`[data-id="${id}"] .rejection-comment-block`);
+
+  if (existingReview && existingReview.status === 'rejected') {
+    showToast(`🔄 ${state.currentReviewer} の非承認を取り消しました`, 'neutral');
+    if (block) block.classList.remove('visible');
+  } else {
+    item.reviews.push({
+      reviewer: state.currentReviewer,
+      status: 'rejected',
+      comment: '',
+      timestamp: Date.now(),
+    });
+    showToast(`❌ ${state.currentReviewer} が非承認にしました`, 'reject');
+    if (block) block.classList.add('visible');
+  }
 
   recalcStatus(item);
   saveToStorage();
   updateCardApproval(id);
   updateStats();
-  showToast(`❌ ${state.currentReviewer} が非承認にしました`, 'reject');
-
-  // Show comment box
-  const block = document.querySelector(`[data-id="${id}"] .rejection-comment-block`);
-  if (block) block.classList.add('visible');
 }
 
 function recalcStatus(item) {
@@ -298,6 +312,13 @@ function setupDropZone(area, id, field) {
 }
 
 // ── LIGHTBOX ──────────────────────────────────────────────────
+function openLightboxById(id, field, label) {
+  const item = state.items.find(i => i.id === id);
+  if (item && item[field]) {
+    openLightbox(item[field], label);
+  }
+}
+
 function openLightbox(src, caption) {
   document.getElementById('lightboxImg').src = src;
   document.getElementById('lightboxCaption').textContent = caption;
@@ -549,7 +570,7 @@ function renderUploadArea(item, field, label) {
         src="${hasSrc ? escHtml(item[field]) : ''}"
         alt="${label}"
         style="display:${hasSrc ? 'block' : 'none'};"
-        onclick="event.stopPropagation(); openLightbox('${hasSrc ? escHtml(item[field]) : ''}', '${label}')"
+        onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"
       />
       ${hasSrc ? `
         <div class="upload-overlay">
