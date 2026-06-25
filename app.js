@@ -380,7 +380,6 @@ document.addEventListener('keydown', (e) => {
 // ── PDF UPLOAD MODAL ──────────────────────────────────────────
 
 function openPdfModal() {
-  renderPdfModal();
   document.getElementById('pdfModal').classList.add('open');
 }
 
@@ -388,82 +387,7 @@ function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('open');
 }
 
-function handlePdfClick(slot) {
-  const pdfData = state[`brandGuidePdf${slot}`];
-  if (pdfData) {
-    try {
-      // Convert Data URI to Blob to prevent about:blank#blocked in Chrome
-      const byteString = atob(pdfData.split(',')[1]);
-      const mimeString = pdfData.split(',')[0].split(':')[1].split(';')[0];
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: mimeString });
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
-    } catch (err) {
-      console.error(err);
-      showToast('PDFを開けませんでした', 'neutral');
-    }
-  } else {
-    // Trigger upload
-    document.getElementById(`pdfUpload${slot}`).click();
-  }
-}
-
-function handlePdfUpload(input, slot) {
-  const file = input.files[0];
-  if (!file || file.type !== 'application/pdf') {
-    showToast('PDFファイルを選択してください', 'neutral');
-    return;
-  }
-  
-  const confirmSave = confirm(`選択したPDFを保存しますか？`);
-  if (!confirmSave) {
-    input.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    state[`brandGuidePdf${slot}`] = e.target.result;
-    await saveToStorage();
-    renderPdfModal();
-    showToast(`ガイド${slot}を登録しました`, 'approve');
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderPdfModal() {
-  for (let i = 1; i <= 3; i++) {
-    const status = document.getElementById(`pdfStatus${i}`);
-    const clearBtn = document.getElementById(`pdfClear${i}`);
-    const btn = document.getElementById(`pdfBtn${i}`);
-    if (state[`brandGuidePdf${i}`]) {
-      status.textContent = '✓ 登録済';
-      status.style.color = '#33a34a'; // green
-      btn.classList.add('has-pdf');
-      clearBtn.style.display = 'inline-block';
-    } else {
-      status.textContent = '未登録';
-      status.style.color = 'var(--text-muted)';
-      btn.classList.remove('has-pdf');
-      clearBtn.style.display = 'none';
-    }
-  }
-}
-
-async function clearPdf(slot) {
-  const confirmDelete = confirm(`ガイド${slot}を削除してもよろしいですか？`);
-  if (!confirmDelete) return;
-
-  state[`brandGuidePdf${slot}`] = null;
-  await saveToStorage();
-  renderPdfModal();
-  showToast(`ガイド${slot}を削除しました`, 'neutral');
-}
+// Removed dynamic PDF upload logic
 
 // ── STATS ─────────────────────────────────────────────────────
 function updateStats() {
