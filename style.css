@@ -77,23 +77,10 @@ body {
   gap: 20px;
 }
 .header-brand { display: flex; align-items: center; gap: 18px; }
-.vibram-logo {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-}
-.logo-v {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 38px;
-  line-height: 1;
-  color: var(--accent);
-}
-.logo-text {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  line-height: 1;
-  color: var(--text-primary);
-  letter-spacing: 3px;
+.vibram-logo-img {
+  height: 38px;
+  max-width: 200px;
+  object-fit: contain;
 }
 .header-divider {
   width: 1px;
