@@ -785,3 +785,7 @@ body {
   .approval-inner { flex-direction: column; gap: 10px; }
   .approval-reviews { margin-left: 0; }
 }
+
+/* -- DRAG AND DROP ----------------------------------------- */
+.sortable-ghost { opacity: 0.4; background: var(--bg-card-hover); }
+

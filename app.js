@@ -17,6 +17,8 @@ let state = {
 };
 
 // ── INIT ──────────────────────────────────────────────────────
+let sortableInstance = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadFromStorage();
   if (state.items.length === 0) {
@@ -26,7 +28,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAll();
   }
   updateStats();
+  initSortable();
 });
+
+function initSortable() {
+  const container = document.getElementById('itemsContainer');
+  if (typeof Sortable !== 'undefined') {
+    sortableInstance = new Sortable(container, {
+      animation: 150,
+      handle: '.drag-handle',
+      ghostClass: 'sortable-ghost',
+      onEnd: function (evt) {
+        const newOrderIds = Array.from(container.children).map(el => parseInt(el.dataset.id));
+        const newItems = [];
+        newOrderIds.forEach(id => {
+          const item = state.items.find(i => i.id === id);
+          if (item) newItems.push(item);
+        });
+        state.items = newItems;
+        saveToStorage();
+        updateCardNumbers();
+      }
+    });
+  }
+}
+
+function updateCardNumbers() {
+  const cards = document.querySelectorAll('.item-card');
+  cards.forEach((card, idx) => {
+    const numEl = card.querySelector('.card-number');
+    if (numEl) {
+      numEl.textContent = String(cards.length - idx).padStart(2, '0');
+    }
+  });
+}
 
 // ── STORAGE ───────────────────────────────────────────────────
 const DB_NAME = 'vibram_brand_check_db';
@@ -179,6 +214,11 @@ function applyFilter() {
 
     card.style.display = (matchStatus && matchSearch) ? '' : 'none';
   });
+
+  const isFiltered = state.filterStatus !== 'all' || state.searchQuery !== '';
+  if (sortableInstance) {
+    sortableInstance.option('disabled', isFiltered);
+  }
 
   // Show/hide empty state
   const visible = Array.from(cards).filter(c => c.style.display !== 'none');
@@ -514,6 +554,16 @@ function renderItem(item, displayNum) {
   div.innerHTML = `
     <!-- Card Header -->
     <div class="card-header">
+      <div class="drag-handle" title="ドラッグして並べ替え" style="cursor: grab; padding: 4px; margin-right: 4px; display: flex; align-items: center; color: var(--text-muted); opacity: 0.6;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+      </div>
       <div class="card-number">${String(displayNum).padStart(2, '0')}</div>
       <input
         class="card-title-input"
