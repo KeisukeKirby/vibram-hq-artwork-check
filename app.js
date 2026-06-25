@@ -112,6 +112,7 @@ function createItem() {
     originalImage: null,
     modifiedImage: null,
     memo: '',
+    isMemoEditing: true,
     status: 'pending',    // pending | approved | rejected
     reviews: [],          // [{reviewer, status, comment, timestamp}]
     rejectionComment: '',
@@ -293,6 +294,33 @@ function updateTitle(id, value) {
 function updateMemo(id, value) {
   const item = state.items.find(i => i.id === id);
   if (item) { item.memo = value; saveToStorage(); }
+}
+
+function toggleMemoEdit(id, isEditing) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+
+  item.isMemoEditing = isEditing;
+  saveToStorage();
+
+  const textarea = document.getElementById(`memo-input-${id}`);
+  const display = document.getElementById(`memo-display-${id}`);
+  const btnEdit = document.getElementById(`btn-memo-edit-${id}`);
+  const btnSave = document.getElementById(`btn-memo-save-${id}`);
+
+  if (isEditing) {
+    textarea.style.display = 'block';
+    display.style.display = 'none';
+    btnEdit.style.display = 'none';
+    btnSave.style.display = 'inline-block';
+    textarea.focus();
+  } else {
+    textarea.style.display = 'none';
+    display.innerHTML = escHtml(item.memo) || '<span style="color:#aaa;">(メモなし)</span>';
+    display.style.display = 'block';
+    btnEdit.style.display = 'inline-block';
+    btnSave.style.display = 'none';
+  }
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────────
@@ -477,6 +505,7 @@ function renderItem(item, displayNum) {
   const myReview = item.reviews.find(r => r.reviewer === state.currentReviewer);
   const isRejected = item.status === 'rejected';
   const hasMyRejection = myReview?.status === 'rejected';
+  const isEditing = item.isMemoEditing !== undefined ? item.isMemoEditing : (item.memo ? false : true);
 
   const div = document.createElement('div');
   div.className = `item-card status-${item.status}`;
@@ -528,15 +557,23 @@ function renderItem(item, displayNum) {
 
       <!-- Memo -->
       <div class="image-zone memo-zone">
-        <div class="image-zone-label">
-          <span class="label-dot label-dot-memo"></span>
-          変更内容メモ
+        <div class="image-zone-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span class="label-dot label-dot-memo"></span>
+            変更内容メモ
+          </div>
+          <div>
+            <button class="btn-memo-action" id="btn-memo-edit-${item.id}" onclick="toggleMemoEdit(${item.id}, true)" style="display: ${isEditing ? 'none' : 'inline-block'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; color: #333;">編集</button>
+            <button class="btn-memo-action" id="btn-memo-save-${item.id}" onclick="toggleMemoEdit(${item.id}, false)" style="display: ${isEditing ? 'inline-block' : 'none'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: none; background: #222; color: #fff; cursor: pointer;">保存</button>
+          </div>
         </div>
+        <div id="memo-display-${item.id}" style="display: ${isEditing ? 'none' : 'block'}; white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 13px; min-height: 80px; color: #333; margin-top: 10px; border: 1px solid #eee; word-break: break-word; line-height: 1.5;">${escHtml(item.memo) || '<span style="color:#aaa;">(メモなし)</span>'}</div>
         <textarea
           class="memo-textarea"
           placeholder="どのような変更を施したか記入してください。&#10;例：&#10;・フォントを Helvetica Neue に変更&#10;・ロゴ下の余白を +20px に調整&#10;・背景色を #000000 に統一&#10;・Vibram ロゴのサイズを規定通り 30mm 以上に修正"
           oninput="updateMemo(${item.id}, this.value)"
-          id="memo-${item.id}"
+          id="memo-input-${item.id}"
+          style="display: ${isEditing ? 'block' : 'none'}; margin-top: 10px;"
         >${escHtml(item.memo)}</textarea>
       </div>
     </div>
