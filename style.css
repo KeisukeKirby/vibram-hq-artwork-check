@@ -789,3 +789,13 @@ body {
 /* -- DRAG AND DROP ----------------------------------------- */
 .sortable-ghost { opacity: 0.4; background: var(--bg-card-hover); }
 
+
+.filter-cat-btn { padding: 5px 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 12px; font-family: 'Inter', sans-serif; cursor: pointer; transition: var(--transition); } .filter-cat-btn:hover { border-color: var(--border-hover); color: var(--text-primary); } .filter-cat-btn.active { background: var(--bg-card); border-color: var(--border-hover); color: var(--text-primary); font-weight: 600; }
+
+
+/* -- CATEGORY SELECTOR ------------------------------------- */
+.card-category-selector { display: flex; gap: 4px; background: var(--bg-input); padding: 4px; border-radius: var(--radius-sm); margin: 0 10px; }
+.cat-sel-btn { padding: 4px 10px; border-radius: 4px; border: none; background: transparent; color: var(--text-secondary); font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; transition: var(--transition); }
+.cat-sel-btn:hover { color: var(--text-primary); }
+.cat-sel-btn.active { background: #fff; color: var(--text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+

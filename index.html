@@ -85,11 +85,17 @@
   <!-- Filter Bar -->
   <div class="filter-bar">
     <div class="filter-bar-inner">
-      <span class="filter-label">フィルター：</span>
+      <span class="filter-label">ステータス：</span>
       <button class="filter-btn active" data-filter="all" onclick="filterItems('all', this)">すべて</button>
       <button class="filter-btn" data-filter="pending" onclick="filterItems('pending', this)">確認待ち</button>
       <button class="filter-btn" data-filter="approved" onclick="filterItems('approved', this)">承認済</button>
       <button class="filter-btn" data-filter="rejected" onclick="filterItems('rejected', this)">非承認</button>
+
+      <span class="filter-label" style="margin-left:16px;">店舗：</span>
+      <button class="filter-cat-btn active" data-cat="all" onclick="filterByCategory('all', this)">すべて</button>
+      <button class="filter-cat-btn" data-cat="BAREFOOT PARK" onclick="filterByCategory('BAREFOOT PARK', this)">BAREFOOT PARK</button>
+      <button class="filter-cat-btn" data-cat="K VILLAGE" onclick="filterByCategory('K VILLAGE', this)">K VILLAGE</button>
+      <button class="filter-cat-btn" data-cat="OTHERS" onclick="filterByCategory('OTHERS', this)">OTHERS</button>
       <div class="filter-search-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>

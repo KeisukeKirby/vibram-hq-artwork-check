@@ -9,6 +9,7 @@ let state = {
   items: [],
   currentReviewer: 'CEO',
   filterStatus: 'all',
+  filterCategory: 'all',
   searchQuery: '',
   nextId: 1,
   brandGuidePdf1: null,
@@ -127,6 +128,10 @@ async function loadFromStorage() {
 
     if (data) {
       state.items = data.items || [];
+      // Default category for existing items
+      state.items.forEach(item => {
+        if (!item.category) item.category = 'OTHERS';
+      });
       state.currentReviewer = data.currentReviewer || 'CEO';
       state.nextId = data.nextId || (state.items.length + 1);
       state.brandGuidePdf1 = data.brandGuidePdf1 || null;
@@ -143,6 +148,7 @@ async function loadFromStorage() {
 function createItem() {
   return {
     id: state.nextId++,
+    category: 'OTHERS',
     title: '',
     originalImage: null,
     modifiedImage: null,
@@ -200,6 +206,13 @@ function searchItems(query) {
   applyFilter();
 }
 
+function filterByCategory(cat, btn) {
+  state.filterCategory = cat;
+  document.querySelectorAll('.filter-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+
 function applyFilter() {
   const cards = document.querySelectorAll('.item-card');
   cards.forEach(card => {
@@ -208,14 +221,15 @@ function applyFilter() {
     if (!item) return;
 
     const matchStatus = state.filterStatus === 'all' || item.status === state.filterStatus;
+    const matchCategory = state.filterCategory === 'all' || item.category === state.filterCategory;
     const matchSearch = !state.searchQuery ||
       (item.title || '').toLowerCase().includes(state.searchQuery) ||
       (item.memo  || '').toLowerCase().includes(state.searchQuery);
 
-    card.style.display = (matchStatus && matchSearch) ? '' : 'none';
+    card.style.display = (matchStatus && matchCategory && matchSearch) ? '' : 'none';
   });
 
-  const isFiltered = state.filterStatus !== 'all' || state.searchQuery !== '';
+  const isFiltered = state.filterStatus !== 'all' || state.filterCategory !== 'all' || state.searchQuery !== '';
   if (sortableInstance) {
     sortableInstance.option('disabled', isFiltered);
   }
@@ -226,7 +240,22 @@ function applyFilter() {
     (visible.length === 0) ? 'block' : 'none';
 }
 
-// ── APPROVAL ──────────────────────────────────────────────────
+// ── APPROVAL / CATEGORY ───────────────────────────────────────
+function updateCategory(id, cat) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  item.category = cat;
+  saveToStorage();
+  
+  // Update visually without full re-render
+  const card = document.querySelector(`.item-card[data-id="${id}"]`);
+  if (card) {
+    card.querySelectorAll('.cat-sel-btn').forEach(b => b.classList.remove('active'));
+    card.querySelector(`.cat-sel-btn[data-cat="${cat}"]`)?.classList.add('active');
+  }
+  applyFilter(); // Might hide the card if filter is active
+}
+
 function approveItem(id) {
   const item = state.items.find(i => i.id === id);
   if (!item) return;
@@ -568,11 +597,16 @@ function renderItem(item, displayNum) {
       <input
         class="card-title-input"
         type="text"
-        placeholder="アートワーク名・製品名・使用場所を入力…"
-        value="${escHtml(item.title)}"
+        placeholder="ブロック名や場所を入力..."
+        value="${escHtml(item.title || '')}"
         oninput="updateTitle(${item.id}, this.value)"
         id="title-${item.id}"
       />
+      <div class="card-category-selector">
+        <button class="cat-sel-btn ${item.category === 'BAREFOOT PARK' ? 'active' : ''}" data-cat="BAREFOOT PARK" onclick="updateCategory(${item.id}, 'BAREFOOT PARK')">BAREFOOT</button>
+        <button class="cat-sel-btn ${item.category === 'K VILLAGE' ? 'active' : ''}" data-cat="K VILLAGE" onclick="updateCategory(${item.id}, 'K VILLAGE')">K VILLAGE</button>
+        <button class="cat-sel-btn ${item.category === 'OTHERS' ? 'active' : ''}" data-cat="OTHERS" onclick="updateCategory(${item.id}, 'OTHERS')">OTHERS</button>
+      </div>
       <span class="card-status-badge badge-${item.status}">${statusLabel(item.status)}</span>
       <button class="card-delete-btn" onclick="deleteItem(${item.id})" title="削除">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
