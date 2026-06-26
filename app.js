@@ -8,8 +8,8 @@
 let state = {
   items: [],
   currentReviewer: 'CEO',
-  filterStatus: 'all',
-  filterCategory: 'all',
+  filterStatus: 'pending',
+  filterCategory: 'BAREFOOT PARK',
   searchQuery: '',
   nextId: 1,
   brandGuidePdf1: null,
@@ -148,7 +148,7 @@ async function loadFromStorage() {
 function createItem() {
   return {
     id: state.nextId++,
-    category: 'OTHERS',
+    category: state.filterCategory || 'BAREFOOT PARK',
     title: '',
     originalImage: null,
     modifiedImage: null,
@@ -220,8 +220,8 @@ function applyFilter() {
     const item = state.items.find(i => i.id === id);
     if (!item) return;
 
-    const matchStatus = state.filterStatus === 'all' || item.status === state.filterStatus;
-    const matchCategory = state.filterCategory === 'all' || item.category === state.filterCategory;
+    const matchStatus = item.status === state.filterStatus;
+    const matchCategory = item.category === state.filterCategory;
     const matchSearch = !state.searchQuery ||
       (item.title || '').toLowerCase().includes(state.searchQuery) ||
       (item.memo  || '').toLowerCase().includes(state.searchQuery);
@@ -229,7 +229,7 @@ function applyFilter() {
     card.style.display = (matchStatus && matchCategory && matchSearch) ? '' : 'none';
   });
 
-  const isFiltered = state.filterStatus !== 'all' || state.filterCategory !== 'all' || state.searchQuery !== '';
+  const isFiltered = state.searchQuery !== '';
   if (sortableInstance) {
     sortableInstance.option('disabled', isFiltered);
   }
