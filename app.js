@@ -659,6 +659,9 @@ function renderAll() {
 
   // Re-apply filter
   applyFilter();
+  if (typeof renderDynamicTranslations === 'function') {
+    renderDynamicTranslations();
+  }
 }
 
 function renderItem(item, displayNum) {
@@ -742,7 +745,7 @@ function renderItem(item, displayNum) {
             <button class="btn-memo-action" id="btn-memo-save-${item.id}" onclick="toggleMemoEdit(${item.id}, false)" style="display: ${isEditing ? 'inline-block' : 'none'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: none; background: #222; color: #fff; cursor: pointer;">${t('btn_save')}</button>
           </div>
         </div>
-        <div id="memo-display-${item.id}" style="display: ${isEditing ? 'none' : 'block'}; white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 13px; min-height: 80px; color: #333; margin-top: 10px; border: 1px solid #eee; word-break: break-word; line-height: 1.5;">${escHtml(item.memo) || `<span style="color:#aaa;">${t('memo_empty')}</span>`}</div>
+        <div id="memo-display-${item.id}" class="dynamic-translate" data-original-text="${escHtml(item.memo)}" style="display: ${isEditing ? 'none' : 'block'}; white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 13px; min-height: 80px; color: #333; margin-top: 10px; border: 1px solid #eee; word-break: break-word; line-height: 1.5;">${item.memo ? escHtml(item.memo) : `<span style="color:#aaa;">${t('memo_empty')}</span>`}</div>
         <textarea
           class="memo-textarea"
           placeholder="どのような変更を施したか記入してください。&#10;例：&#10;・フォントを Helvetica Neue に変更&#10;・ロゴ下の余白を +20px に調整&#10;・背景色を #000000 に統一&#10;・Vibram ロゴのサイズを規定通り 30mm 以上に修正"

@@ -208,3 +208,59 @@ function applyTranslations() {
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
 });
+
+// ── DYNAMIC MACHINE TRANSLATION ──────────────────────────────────────────
+const translationCache = {}; // { 'ja_to_en_TEXT': 'TRANSLATED' }
+
+async function translateText(text, targetLang) {
+  if (!text || text.trim() === '') return text;
+  if (targetLang === 'ja') return text; // Assuming base input is mostly JA for now, or we rely on cache. Wait, if it's auto-detect, targetLang='ja' works too!
+  
+  const cacheKey = `${targetLang}_${text}`;
+  if (translationCache[cacheKey]) {
+    return translationCache[cacheKey];
+  }
+
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    let translated = '';
+    if (data && data[0]) {
+      data[0].forEach(part => {
+        if (part[0]) translated += part[0];
+      });
+    }
+    if (translated) {
+      translationCache[cacheKey] = translated;
+      return translated;
+    }
+  } catch (error) {
+    console.error('Translation error:', error);
+  }
+  return text; // Fallback to original
+}
+
+async function renderDynamicTranslations() {
+  const elements = document.querySelectorAll('.dynamic-translate');
+  for (const el of elements) {
+    const originalText = el.getAttribute('data-original-text');
+    if (!originalText) continue;
+    
+    // Check if it's the empty placeholder span
+    if (originalText === '<span style="color:#aaa;">${t(\'memo_empty\')}</span>' || originalText.includes('memo_empty')) {
+      // Handled by standard t() translation
+      continue;
+    }
+
+    if (currentLanguage === 'ja') {
+      // Revert to original assuming input is Japanese
+      el.textContent = originalText;
+    } else {
+      // Add a loading indicator or just translate silently
+      const translated = await translateText(originalText, currentLanguage);
+      el.textContent = translated;
+    }
+  }
+}
+
