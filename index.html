@@ -18,32 +18,40 @@
         <img src="logo.png" class="vibram-logo-img" alt="Vibram Logo" />
         <div class="header-divider"></div>
         <div class="header-title-block">
-          <h1 class="header-title">Brand Compliance Dashboard</h1>
-          <p class="header-subtitle">ブランド基準チェック・承認システム</p>
+          <h1 class="header-title" data-i18n="app_title">Brand Compliance Dashboard</h1>
+          <p class="header-subtitle" data-i18n="app_subtitle">ブランド基準チェック・承認システム</p>
         </div>
       </div>
       <div class="header-actions">
         <div class="stats-pill" id="statsPill">
           <span class="stat-item">
             <span class="stat-dot dot-pending"></span>
-            <span id="countPending">0</span> 確認待ち
+            <span id="countPending">0</span> <span data-i18n="status_pending">確認待ち</span>
           </span>
           <span class="stat-sep">|</span>
           <span class="stat-item">
             <span class="stat-dot dot-approved"></span>
-            <span id="countApproved">0</span> 承認済
+            <span id="countApproved">0</span> <span data-i18n="status_approved">承認済</span>
           </span>
           <span class="stat-sep">|</span>
           <span class="stat-item">
             <span class="stat-dot dot-rejected"></span>
-            <span id="countRejected">0</span> 非承認
+            <span id="countRejected">0</span> <span data-i18n="status_rejected">非承認</span>
           </span>
         </div>
+        
+        <!-- Language Selector -->
+        <div class="lang-selector">
+          <button class="lang-selector-btn" data-lang="ja" onclick="setLanguage('ja')">JA</button>
+          <button class="lang-selector-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+          <button class="lang-selector-btn" data-lang="th" onclick="setLanguage('th')">TH</button>
+        </div>
+
         <button class="btn btn-add" id="btnAddItem" onclick="addItem()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          新しいアイテムを追加
+          <span data-i18n="btn_add_item">新しいアイテムを追加</span>
         </button>
       </div>
     </div>
@@ -67,7 +75,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          エクスポート
+          <span data-i18n="btn_export">エクスポート</span>
         </button>
       </div>
     </div>
@@ -75,20 +83,20 @@
   <!-- Filter Bar -->
   <div class="filter-bar">
     <div class="filter-bar-inner">
-      <span class="filter-label">ステータス：</span>
-      <button class="filter-btn active" data-filter="pending" onclick="filterItems('pending', this)">確認待ち</button>
-      <button class="filter-btn" data-filter="approved" onclick="filterItems('approved', this)">承認済</button>
-      <button class="filter-btn" data-filter="rejected" onclick="filterItems('rejected', this)">非承認</button>
+      <span class="filter-label" data-i18n="filter_status">ステータス：</span>
+      <button class="filter-btn active" data-filter="pending" onclick="filterItems('pending', this)" data-i18n="status_pending">確認待ち</button>
+      <button class="filter-btn" data-filter="approved" onclick="filterItems('approved', this)" data-i18n="status_approved">承認済</button>
+      <button class="filter-btn" data-filter="rejected" onclick="filterItems('rejected', this)" data-i18n="status_rejected">非承認</button>
 
-      <span class="filter-label" style="margin-left:16px;">店舗：</span>
-      <button class="filter-cat-btn active" data-cat="BAREFOOT PARK" onclick="filterByCategory('BAREFOOT PARK', this)">BAREFOOT PARK</button>
-      <button class="filter-cat-btn" data-cat="K VILLAGE" onclick="filterByCategory('K VILLAGE', this)">K VILLAGE</button>
-      <button class="filter-cat-btn" data-cat="OTHERS" onclick="filterByCategory('OTHERS', this)">OTHERS</button>
+      <span class="filter-label" style="margin-left:16px;" data-i18n="filter_store">店舗：</span>
+      <button class="filter-cat-btn active" data-cat="BAREFOOT PARK" onclick="filterByCategory('BAREFOOT PARK', this)" data-i18n="store_barefoot">BAREFOOT PARK</button>
+      <button class="filter-cat-btn" data-cat="K VILLAGE" onclick="filterByCategory('K VILLAGE', this)" data-i18n="store_kvillage">K VILLAGE</button>
+      <button class="filter-cat-btn" data-cat="OTHERS" onclick="filterByCategory('OTHERS', this)" data-i18n="store_others">OTHERS</button>
       <div class="filter-search-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" class="filter-search" placeholder="アイテムを検索..." oninput="searchItems(this.value)" />
+        <input type="text" class="filter-search" placeholder="アイテムを検索..." data-i18n="search_placeholder" oninput="searchItems(this.value)" />
       </div>
     </div>
   </div>
@@ -100,8 +108,8 @@
     </div>
     <div class="empty-state" id="emptyState" style="display:none;">
       <div class="empty-icon">📋</div>
-      <p class="empty-title">アイテムがありません</p>
-      <p class="empty-sub">「新しいアイテムを追加」ボタンでチェックを開始してください</p>
+      <p class="empty-title" data-i18n="empty_title">アイテムがありません</p>
+      <p class="empty-sub" data-i18n="empty_sub">「新しいアイテムを追加」ボタンでチェックを開始してください</p>
     </div>
   </main>
 
@@ -139,6 +147,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

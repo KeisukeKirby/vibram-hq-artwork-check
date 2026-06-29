@@ -158,13 +158,13 @@ function addItem() {
 }
 
 async function deleteItem(id) {
-  if (!confirm('このアイテムを削除しますか？')) return;
+  if (!confirm(t('alert_delete_item'))) return;
   state.items = state.items.filter(i => i.id !== id);
   await sbClient.from('brand_check_items').delete().eq('id', id);
   saveToStorage();
   renderAll();
   updateStats();
-  showToast('アイテムを削除しました', 'neutral');
+  showToast(t('toast_deleted'), 'neutral');
 }
 
 // ── FILTER / SEARCH ───────────────────────────────────────────
@@ -359,7 +359,7 @@ function toggleMemoEdit(id, isEditing) {
     textarea.focus();
   } else {
     textarea.style.display = 'none';
-    display.innerHTML = escHtml(item.memo) || '<span style="color:#aaa;">(メモなし)</span>';
+    display.innerHTML = escHtml(item.memo) || `<span style="color:#aaa;">${t('memo_empty')}</span>`;
     display.style.display = 'block';
     btnEdit.style.display = 'inline-block';
     btnSave.style.display = 'none';
@@ -385,7 +385,7 @@ async function uploadToSupabase(file) {
   const { data, error } = await sbClient.storage.from('media').upload(fileName, file);
   if (error) {
     console.error('Upload error:', error);
-    showToast('アップロードに失敗しました', 'neutral');
+    showToast(t('toast_upload_fail'), 'neutral');
     return null;
   }
   
@@ -401,12 +401,12 @@ async function handleFileSelect(id, field, fileOrFiles) {
   if (fileOrFiles instanceof FileList || Array.isArray(fileOrFiles)) {
     const files = Array.from(fileOrFiles).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
     if (files.length === 0) {
-      showToast('画像または動画ファイルを選択してください', 'neutral');
+      showToast(t('toast_select_file'), 'neutral');
       return;
     }
     
     if (field === 'originalImages') {
-      showToast('アップロード中...', 'neutral');
+      showToast(t('toast_uploading'), 'neutral');
       for (const file of files) {
         const publicUrl = await uploadToSupabase(file);
         if (publicUrl) {
@@ -415,7 +415,7 @@ async function handleFileSelect(id, field, fileOrFiles) {
       }
       saveToStorage();
       refreshOriginalImagesArea(id);
-      showToast('アップロード完了', 'neutral');
+      showToast(t('toast_upload_success'), 'neutral');
       return;
     } else {
       fileOrFiles = files[0];
@@ -424,17 +424,17 @@ async function handleFileSelect(id, field, fileOrFiles) {
 
   const file = fileOrFiles;
   if (!file || (!file.type.startsWith('image/') && !file.type.startsWith('video/'))) {
-    showToast('画像または動画ファイルを選択してください', 'neutral');
+    showToast(t('toast_select_file'), 'neutral');
     return;
   }
   
-  showToast('アップロード中...', 'neutral');
+  showToast(t('toast_uploading'), 'neutral');
   const publicUrl = await uploadToSupabase(file);
   if (publicUrl) {
     item[field] = publicUrl;
     saveToStorage();
     refreshUploadArea(id, field, publicUrl);
-    showToast('アップロード完了', 'neutral');
+    showToast(t('toast_upload_success'), 'neutral');
   }
 }
 
@@ -610,7 +610,7 @@ function exportData() {
   a.download = `vibram_brand_check_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('CSVをダウンロードしました', 'neutral');
+  showToast(t('toast_csv_success'), 'neutral');
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
@@ -684,18 +684,18 @@ function renderItem(item, displayNum) {
       <input
         class="card-title-input"
         type="text"
-        placeholder="ブロック名や場所を入力..."
+        placeholder="${t('title_placeholder')}"
         value="${escHtml(item.title || '')}"
         oninput="updateTitle(${item.id}, this.value)"
         id="title-${item.id}"
       />
       <div class="card-category-selector">
-        <button class="cat-sel-btn ${item.category === 'BAREFOOT PARK' ? 'active' : ''}" data-cat="BAREFOOT PARK" onclick="updateCategory(${item.id}, 'BAREFOOT PARK')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>BAREFOOT</button>
-        <button class="cat-sel-btn ${item.category === 'K VILLAGE' ? 'active' : ''}" data-cat="K VILLAGE" onclick="updateCategory(${item.id}, 'K VILLAGE')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>K VILLAGE</button>
-        <button class="cat-sel-btn ${item.category === 'OTHERS' ? 'active' : ''}" data-cat="OTHERS" onclick="updateCategory(${item.id}, 'OTHERS')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>OTHERS</button>
+        <button class="cat-sel-btn ${item.category === 'BAREFOOT PARK' ? 'active' : ''}" data-cat="BAREFOOT PARK" onclick="updateCategory(${item.id}, 'BAREFOOT PARK')" ${(item.originalImages && item.originalImages.length > 0) ? `disabled title="${t('tooltip_cant_move')}"` : ''}>BAREFOOT</button>
+        <button class="cat-sel-btn ${item.category === 'K VILLAGE' ? 'active' : ''}" data-cat="K VILLAGE" onclick="updateCategory(${item.id}, 'K VILLAGE')" ${(item.originalImages && item.originalImages.length > 0) ? `disabled title="${t('tooltip_cant_move')}"` : ''}>${t('store_kvillage')}</button>
+        <button class="cat-sel-btn ${item.category === 'OTHERS' ? 'active' : ''}" data-cat="OTHERS" onclick="updateCategory(${item.id}, 'OTHERS')" ${(item.originalImages && item.originalImages.length > 0) ? `disabled title="${t('tooltip_cant_move')}"` : ''}>${t('store_others')}</button>
       </div>
       <span class="card-status-badge badge-${item.status}">${statusLabel(item.status)}</span>
-      <button class="card-delete-btn" onclick="deleteItem(${item.id})" title="削除">
+      <button class="card-delete-btn" onclick="deleteItem(${item.id})" title="${t('tooltip_delete_item')}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"/>
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -723,7 +723,7 @@ function renderItem(item, displayNum) {
           <span class="label-dot label-dot-modified"></span>
           修正後画像
         </div>
-        ${renderUploadArea(item, 'modifiedImage', '修正後')}
+        ${renderUploadArea(item, 'modifiedImage', t('lightbox_modified'))}
       </div>
 
       <!-- Memo -->
@@ -734,11 +734,11 @@ function renderItem(item, displayNum) {
             変更内容メモ
           </div>
           <div>
-            <button class="btn-memo-action" id="btn-memo-edit-${item.id}" onclick="toggleMemoEdit(${item.id}, true)" style="display: ${isEditing ? 'none' : 'inline-block'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; color: #333;">編集</button>
-            <button class="btn-memo-action" id="btn-memo-save-${item.id}" onclick="toggleMemoEdit(${item.id}, false)" style="display: ${isEditing ? 'inline-block' : 'none'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: none; background: #222; color: #fff; cursor: pointer;">保存</button>
+            <button class="btn-memo-action" id="btn-memo-edit-${item.id}" onclick="toggleMemoEdit(${item.id}, true)" style="display: ${isEditing ? 'none' : 'inline-block'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; color: #333;">${t('btn_edit')}</button>
+            <button class="btn-memo-action" id="btn-memo-save-${item.id}" onclick="toggleMemoEdit(${item.id}, false)" style="display: ${isEditing ? 'inline-block' : 'none'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: none; background: #222; color: #fff; cursor: pointer;">${t('btn_save')}</button>
           </div>
         </div>
-        <div id="memo-display-${item.id}" style="display: ${isEditing ? 'none' : 'block'}; white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 13px; min-height: 80px; color: #333; margin-top: 10px; border: 1px solid #eee; word-break: break-word; line-height: 1.5;">${escHtml(item.memo) || '<span style="color:#aaa;">(メモなし)</span>'}</div>
+        <div id="memo-display-${item.id}" style="display: ${isEditing ? 'none' : 'block'}; white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 13px; min-height: 80px; color: #333; margin-top: 10px; border: 1px solid #eee; word-break: break-word; line-height: 1.5;">${escHtml(item.memo) || `<span style="color:#aaa;">${t('memo_empty')}</span>`}</div>
         <textarea
           class="memo-textarea"
           placeholder="どのような変更を施したか記入してください。&#10;例：&#10;・フォントを Helvetica Neue に変更&#10;・ロゴ下の余白を +20px に調整&#10;・背景色を #000000 に統一&#10;・Vibram ロゴのサイズを規定通り 30mm 以上に修正"
@@ -822,9 +822,9 @@ function renderOriginalImagesArea(item) {
     
     html += `
       <div class="main-image-wrapper upload-area has-image" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
-        ${renderMedia(mainImage, true, `onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})"`)}
+        ${renderMedia(mainImage, true, `onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', t('lightbox_original'), ${displayIndex})"`)}
         <div class="upload-overlay">
-          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})">拡大</button>
+          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', t('lightbox_original'), ${displayIndex})">${t('btn_expand')}</button>
           <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, ${displayIndex})">削除</button>
         </div>
         ${images.length > 1 ? `
@@ -887,7 +887,7 @@ function renderUploadArea(item, field, label) {
       </div>
       ${renderMedia(hasSrc ? item[field] : '', true, `style="display:${hasSrc ? 'block' : 'none'};" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"`)}
       <div class="upload-overlay">
-        <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">拡大</button>
+        <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">${t('btn_expand')}</button>
         <button class="upload-overlay-btn" onclick="event.stopPropagation(); triggerUpload(event, ${item.id}, '${field}')">画像を変更</button>
         <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearImage(${item.id}, '${field}')">削除</button>
       </div>
@@ -912,3 +912,7 @@ function escHtml(str) {
 }
 
 
+
+window.addEventListener('languageChanged', () => {
+  renderAll();
+});
