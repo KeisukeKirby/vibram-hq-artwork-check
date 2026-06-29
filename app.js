@@ -6,7 +6,7 @@
 
 const SUPABASE_URL = 'https://mmwuffznvwlunqvtuvca.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_HwkTb6DEkHcb-knfoiO6ow_jXD5nHhD';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
@@ -84,13 +84,13 @@ async function saveToStorage() {
   }));
 
   if (rows.length > 0) {
-    const { error } = await supabase.from('brand_check_items').upsert(rows);
+    const { error } = await sbClient.from('brand_check_items').upsert(rows);
     if (error) console.error('Supabase upsert error:', error);
   }
 }
 
 async function loadFromStorage() {
-  const { data, error } = await supabase.from('brand_check_items').select('*').order('order_index', { ascending: true });
+  const { data, error } = await sbClient.from('brand_check_items').select('*').order('order_index', { ascending: true });
   
   if (error) {
     console.error('Supabase fetch error:', error);
@@ -160,7 +160,7 @@ function addItem() {
 async function deleteItem(id) {
   if (!confirm('このアイテムを削除しますか？')) return;
   state.items = state.items.filter(i => i.id !== id);
-  await supabase.from('brand_check_items').delete().eq('id', id);
+  await sbClient.from('brand_check_items').delete().eq('id', id);
   saveToStorage();
   renderAll();
   updateStats();
@@ -381,14 +381,14 @@ async function uploadToSupabase(file) {
   const ext = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${ext}`;
   
-  const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+  const { data, error } = await sbClient.storage.from('media').upload(fileName, file);
   if (error) {
     console.error('Upload error:', error);
     showToast('アップロードに失敗しました', 'neutral');
     return null;
   }
   
-  const { data: publicData } = supabase.storage.from('media').getPublicUrl(fileName);
+  const { data: publicData } = sbClient.storage.from('media').getPublicUrl(fileName);
   return publicData.publicUrl;
 }
 
