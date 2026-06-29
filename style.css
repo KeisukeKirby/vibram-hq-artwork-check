@@ -796,6 +796,103 @@ body {
 /* -- CATEGORY SELECTOR ------------------------------------- */
 .card-category-selector { display: flex; gap: 4px; background: var(--bg-input); padding: 4px; border-radius: var(--radius-sm); margin: 0 10px; }
 .cat-sel-btn { padding: 4px 10px; border-radius: 4px; border: none; background: transparent; color: var(--text-secondary); font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; transition: var(--transition); }
-.cat-sel-btn:hover { color: var(--text-primary); }
+.cat-sel-btn:not(:disabled):hover { color: var(--text-primary); }
 .cat-sel-btn.active { background: #fff; color: var(--text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.cat-sel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+
+/* -- MULTIPLE IMAGES UPLOAD (Original Images) ---------------- */
+.original-images-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.main-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-input);
+}
+.main-image-wrapper img.upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.thumbnails-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.thumbnails-container::-webkit-scrollbar {
+  height: 6px;
+}
+.thumbnails-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.thumbnail-wrapper {
+  position: relative;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.thumbnail-wrapper.active {
+  border-color: var(--accent);
+}
+.thumbnail-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.thumbnail-wrapper:hover .thumb-delete-btn {
+  display: flex;
+}
+.thumb-delete-btn {
+  display: none;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 10px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.thumb-delete-btn:hover {
+  background: rgba(185, 28, 28, 1);
+}
+.thumbnail-add {
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.thumbnail-add:hover {
+  background: #f1f3f5;
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
 

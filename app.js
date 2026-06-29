@@ -86,7 +86,7 @@ async function saveToStorage() {
   const toSave = {
     items: state.items.map(item => ({
       ...item,
-      originalImage: item.originalImage || null,
+      originalImages: item.originalImages || (item.originalImage ? [item.originalImage] : []),
       modifiedImage: item.modifiedImage || null,
     })),
     currentReviewer: state.currentReviewer,
@@ -131,6 +131,9 @@ async function loadFromStorage() {
       // Default category for existing items
       state.items.forEach(item => {
         if (!item.category) item.category = 'OTHERS';
+        if (!item.originalImages) {
+          item.originalImages = item.originalImage ? [item.originalImage] : [];
+        }
       });
       state.currentReviewer = data.currentReviewer || 'CEO';
       state.nextId = data.nextId || (state.items.length + 1);
@@ -150,7 +153,7 @@ function createItem() {
     id: state.nextId++,
     category: state.filterCategory || 'BAREFOOT PARK',
     title: '',
-    originalImage: null,
+    originalImages: [],
     modifiedImage: null,
     memo: '',
     isMemoEditing: true,
@@ -393,21 +396,82 @@ function toggleMemoEdit(id, isEditing) {
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────────
-function handleFileSelect(id, field, file) {
+function handleFileSelect(id, field, fileOrFiles) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+
+  if (fileOrFiles instanceof FileList || Array.isArray(fileOrFiles)) {
+    const files = Array.from(fileOrFiles).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      showToast('画像ファイルを選択してください', 'neutral');
+      return;
+    }
+    
+    if (field === 'originalImages') {
+      let loaded = 0;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          item.originalImages.push(e.target.result);
+          loaded++;
+          if (loaded === files.length) {
+            saveToStorage();
+            refreshOriginalImagesArea(id);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      return;
+    } else {
+      fileOrFiles = files[0];
+    }
+  }
+
+  const file = fileOrFiles;
   if (!file || !file.type.startsWith('image/')) {
     showToast('画像ファイルを選択してください', 'neutral');
     return;
   }
   const reader = new FileReader();
   reader.onload = (e) => {
-    const item = state.items.find(i => i.id === id);
-    if (item) {
-      item[field] = e.target.result;
-      saveToStorage();
-      refreshUploadArea(id, field, e.target.result);
-    }
+    item[field] = e.target.result;
+    saveToStorage();
+    refreshUploadArea(id, field, e.target.result);
   };
   reader.readAsDataURL(file);
+}
+
+function clearOriginalImage(id, index) {
+  const item = state.items.find(i => i.id === id);
+  if (item && item.originalImages) {
+    item.originalImages.splice(index, 1);
+    saveToStorage();
+    refreshOriginalImagesArea(id);
+  }
+}
+
+function setMainOriginalImage(id, index) {
+  const item = state.items.find(i => i.id === id);
+  if (item && item.originalImages && item.originalImages[index]) {
+    const temp = item.originalImages[0];
+    item.originalImages[0] = item.originalImages[index];
+    item.originalImages[index] = temp;
+    saveToStorage();
+    refreshOriginalImagesArea(id);
+  }
+}
+
+function refreshOriginalImagesArea(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  const container = document.querySelector(`[data-id="${id}"] .original-images-container`);
+  if (container) {
+    const newHtml = renderOriginalImagesArea(item);
+    container.outerHTML = newHtml;
+    // Reattach drop zone
+    const newArea = document.querySelector(`[data-id="${id}"] [data-field="originalImages"]`);
+    if (newArea) setupDropZone(newArea, id, 'originalImages');
+  }
 }
 
 function clearImage(id, field) {
@@ -449,16 +513,21 @@ function setupDropZone(area, id, field) {
   area.addEventListener('drop', (e) => {
     e.preventDefault();
     area.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    handleFileSelect(id, field, file);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileSelect(id, field, e.dataTransfer.files);
+    }
   });
 }
 
 // ── LIGHTBOX ──────────────────────────────────────────────────
-function openLightboxById(id, field, label) {
+function openLightboxById(id, field, label, index = 0) {
   const item = state.items.find(i => i.id === id);
   if (item && item[field]) {
-    openLightbox(item[field], label);
+    if (Array.isArray(item[field])) {
+      openLightbox(item[field][index], label);
+    } else {
+      openLightbox(item[field], label);
+    }
   }
 }
 
@@ -603,9 +672,9 @@ function renderItem(item, displayNum) {
         id="title-${item.id}"
       />
       <div class="card-category-selector">
-        <button class="cat-sel-btn ${item.category === 'BAREFOOT PARK' ? 'active' : ''}" data-cat="BAREFOOT PARK" onclick="updateCategory(${item.id}, 'BAREFOOT PARK')">BAREFOOT</button>
-        <button class="cat-sel-btn ${item.category === 'K VILLAGE' ? 'active' : ''}" data-cat="K VILLAGE" onclick="updateCategory(${item.id}, 'K VILLAGE')">K VILLAGE</button>
-        <button class="cat-sel-btn ${item.category === 'OTHERS' ? 'active' : ''}" data-cat="OTHERS" onclick="updateCategory(${item.id}, 'OTHERS')">OTHERS</button>
+        <button class="cat-sel-btn ${item.category === 'BAREFOOT PARK' ? 'active' : ''}" data-cat="BAREFOOT PARK" onclick="updateCategory(${item.id}, 'BAREFOOT PARK')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>BAREFOOT</button>
+        <button class="cat-sel-btn ${item.category === 'K VILLAGE' ? 'active' : ''}" data-cat="K VILLAGE" onclick="updateCategory(${item.id}, 'K VILLAGE')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>K VILLAGE</button>
+        <button class="cat-sel-btn ${item.category === 'OTHERS' ? 'active' : ''}" data-cat="OTHERS" onclick="updateCategory(${item.id}, 'OTHERS')" ${(item.originalImages && item.originalImages.length > 0) ? 'disabled title="画像設定済みのため移動できません"' : ''}>OTHERS</button>
       </div>
       <span class="card-status-badge badge-${item.status}">${statusLabel(item.status)}</span>
       <button class="card-delete-btn" onclick="deleteItem(${item.id})" title="削除">
@@ -627,7 +696,7 @@ function renderItem(item, displayNum) {
           <span class="label-dot label-dot-original"></span>
           オリジナル画像
         </div>
-        ${renderUploadArea(item, 'originalImage', 'オリジナル')}
+        ${renderOriginalImagesArea(item)}
       </div>
 
       <!-- Modified Image -->
@@ -713,13 +782,60 @@ function renderItem(item, displayNum) {
 
   // Setup drag & drop after inserting into DOM
   requestAnimationFrame(() => {
-    ['originalImage', 'modifiedImage'].forEach(field => {
+    ['originalImages', 'modifiedImage'].forEach(field => {
       const area = div.querySelector(`[data-field="${field}"]`);
       if (area) setupDropZone(area, item.id, field);
     });
   });
 
   return div;
+}
+
+function renderOriginalImagesArea(item) {
+  const images = item.originalImages || [];
+  const hasImages = images.length > 0;
+  
+  let html = `<div class="original-images-container" data-field="originalImages">`;
+  
+  if (hasImages) {
+    const mainImage = images[0];
+    
+    html += `
+      <div class="main-image-wrapper upload-area has-image" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
+        <img class="upload-preview" src="${escHtml(mainImage)}" style="display:block;" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', 0)" />
+        <div class="upload-overlay">
+          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', 0)">拡大</button>
+          <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, 0)">削除</button>
+        </div>
+      </div>
+      <div class="thumbnails-container">
+        ${images.map((src, idx) => `
+          <div class="thumbnail-wrapper ${idx === 0 ? 'active' : ''}" onclick="setMainOriginalImage(${item.id}, ${idx})">
+            <img src="${escHtml(src)}" />
+            <button class="thumb-delete-btn" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, ${idx})">✕</button>
+          </div>
+        `).join('')}
+        <div class="thumbnail-add" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="upload-area" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
+        <div class="upload-placeholder" style="display:flex; flex-direction:column; align-items:center;">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップで複数追加</div>
+          <div class="upload-text-sub">JPG, PNG, WebP, SVG 対応</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  html += `<input type="file" class="upload-input" multiple accept="image/*" id="file-${item.id}-originalImages" onchange="handleFileSelect(${item.id}, 'originalImages', this.files)" />`;
+  html += `</div>`;
+  
+  return html;
 }
 
 function renderUploadArea(item, field, label) {
