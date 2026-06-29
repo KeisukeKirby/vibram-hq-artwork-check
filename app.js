@@ -538,7 +538,8 @@ function openLightboxById(id, field, label, index = 0) {
 function openLightbox(src, caption) {
   const img = document.getElementById('lightboxImg');
   const vid = document.getElementById('lightboxVideo');
-  if (src.startsWith('data:video/')) {
+  const isVideo = src.startsWith('data:video/') || src.toLowerCase().match(/\.(mp4|webm|mov)(\?.*)?$/) !== null;
+  if (isVideo) {
     img.style.display = 'none';
     vid.src = src;
     vid.style.display = 'block';
