@@ -908,3 +908,129 @@ function escHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// ── DATA MIGRATION ────────────────────────────────────────────
+async function migrateOldData() {
+  const btn = document.getElementById('btnMigrate');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '移行中... (数分かかる場合があります)';
+  }
+  
+  try {
+    const request = indexedDB.open('vibram_brand_check_db', 1);
+    const db = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    if (!db.objectStoreNames.contains('state_store')) {
+      throw new Error("Old database store not found.");
+    }
+
+    const tx = db.transaction('state_store', 'readonly');
+    const getReq = tx.objectStore('state_store').get('appState');
+    const oldData = await new Promise((resolve, reject) => {
+      getReq.onsuccess = () => resolve(getReq.result);
+      getReq.onerror = () => reject(getReq.error);
+    });
+
+    if (!oldData || !oldData.items || oldData.items.length === 0) {
+      showToast('移行する旧データが見つかりませんでした', 'neutral');
+      if (btn) {
+        btn.textContent = '☁️ 旧データをクラウドへ移行';
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    const items = oldData.items;
+    
+    function dataURLtoFile(dataurl, filename) {
+      if (!dataurl || !dataurl.startsWith('data:')) return null;
+      var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+      while(n--){
+          u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, {type:mime});
+    }
+
+    let currentNextId = state.nextId;
+
+    for (let i = 0; i < items.length; i++) {
+      const oldItem = items[i];
+      let newOriginals = [];
+      let newModified = null;
+      
+      if (oldItem.originalImages && oldItem.originalImages.length > 0) {
+        for (let j = 0; j < oldItem.originalImages.length; j++) {
+          const src = oldItem.originalImages[j];
+          if (src && src.startsWith('data:')) {
+            const ext = src.split(';')[0].split('/')[1] || 'png';
+            const f = dataURLtoFile(src, `old_orig_${oldItem.id}_${j}.${ext}`);
+            if (f) {
+              const publicUrl = await uploadToSupabase(f);
+              if (publicUrl) newOriginals.push(publicUrl);
+            }
+          } else if (src && src.startsWith('http')) {
+            newOriginals.push(src);
+          }
+        }
+      } else if (oldItem.originalImage) {
+          const src = oldItem.originalImage;
+          if (src && src.startsWith('data:')) {
+            const ext = src.split(';')[0].split('/')[1] || 'png';
+            const f = dataURLtoFile(src, `old_orig_${oldItem.id}.${ext}`);
+            if (f) {
+              const publicUrl = await uploadToSupabase(f);
+              if (publicUrl) newOriginals.push(publicUrl);
+            }
+          } else if (src && src.startsWith('http')) {
+            newOriginals.push(src);
+          }
+      }
+      
+      if (oldItem.modifiedImage && oldItem.modifiedImage.startsWith('data:')) {
+        const ext = oldItem.modifiedImage.split(';')[0].split('/')[1] || 'png';
+        const f = dataURLtoFile(oldItem.modifiedImage, `old_mod_${oldItem.id}.${ext}`);
+        if (f) {
+          newModified = await uploadToSupabase(f);
+        }
+      } else if (oldItem.modifiedImage && oldItem.modifiedImage.startsWith('http')) {
+        newModified = oldItem.modifiedImage;
+      }
+      
+      const newItem = {
+        id: currentNextId++,
+        category: oldItem.category || 'OTHERS',
+        title: oldItem.title || '',
+        originalImages: newOriginals,
+        modifiedImage: newModified,
+        memo: oldItem.memo || '',
+        isMemoEditing: false,
+        status: oldItem.status || 'pending',
+        reviews: oldItem.reviews || [],
+        createdAt: oldItem.createdAt || Date.now()
+      };
+      
+      state.items.push(newItem);
+    }
+    
+    state.nextId = currentNextId;
+    await saveToStorage();
+    await loadFromStorage();
+    renderAll();
+    updateStats();
+    
+    showToast('旧データの移行が完了しました！', 'neutral');
+    if (btn) btn.style.display = 'none';
+  } catch (e) {
+    console.error('Migration error:', e);
+    showToast('移行中にエラーが発生しました', 'neutral');
+    if (btn) {
+      btn.textContent = '☁️ 旧データをクラウドへ移行';
+      btn.disabled = false;
+    }
+  }
+}
