@@ -369,7 +369,8 @@ function toggleMemoEdit(id, isEditing) {
 // ── MEDIA HELPER ──────────────────────────────────────────────
 function renderMedia(src, isMain = false, extraAttrs = '') {
   if (!src) return '';
-  if (src.startsWith('data:video/')) {
+  const isVideo = src.startsWith('data:video/') || src.toLowerCase().match(/\.(mp4|webm|mov)(\?.*)?$/) !== null;
+  if (isVideo) {
     return `<video ${isMain ? 'class="upload-preview"' : ''} src="${escHtml(src)}" style="display:block; object-fit: cover;" ${isMain ? 'controls' : 'autoplay muted loop playsinline'} ${extraAttrs}></video>`;
   } else {
     return `<img ${isMain ? 'class="upload-preview"' : ''} src="${escHtml(src)}" style="display:block; object-fit: cover;" ${extraAttrs} />`;
