@@ -4,6 +4,10 @@
 
 'use strict';
 
+const SUPABASE_URL = 'https://mmwuffznvwlunqvtuvca.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HwkTb6DEkHcb-knfoiO6ow_jXD5nHhD';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
   items: [],
@@ -65,84 +69,50 @@ function updateCardNumbers() {
 }
 
 // ── STORAGE ───────────────────────────────────────────────────
-const DB_NAME = 'vibram_brand_check_db';
-const STORE_NAME = 'state_store';
-
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
 
 async function saveToStorage() {
-  const toSave = {
-    items: state.items.map(item => ({
-      ...item,
-      originalImages: item.originalImages || (item.originalImage ? [item.originalImage] : []),
-      modifiedImage: item.modifiedImage || null,
-    })),
-    currentReviewer: state.currentReviewer,
-    nextId: state.nextId,
-    brandGuidePdf1: state.brandGuidePdf1,
-    brandGuidePdf2: state.brandGuidePdf2,
-    brandGuidePdf3: state.brandGuidePdf3,
-  };
-  try {
-    const db = await initDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put(toSave, 'appState');
-    return new Promise((resolve, reject) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch(e) {
-    console.error('Failed to save to IndexedDB', e);
+  const rows = state.items.map((item, idx) => ({
+    id: item.id,
+    category: item.category,
+    title: item.title,
+    original_images: item.originalImages || [],
+    modified_image: item.modifiedImage || null,
+    memo: item.memo || '',
+    status: item.status,
+    reviews: item.reviews || [],
+    order_index: idx
+  }));
+
+  if (rows.length > 0) {
+    const { error } = await supabase.from('brand_check_items').upsert(rows);
+    if (error) console.error('Supabase upsert error:', error);
   }
 }
 
 async function loadFromStorage() {
-  try {
-    const db = await initDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const request = tx.objectStore(STORE_NAME).get('appState');
-    let data = await new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    if (!data) {
-      const raw = localStorage.getItem('vibram_brand_check');
-      if (raw) {
-        data = JSON.parse(raw);
-        tx.objectStore(STORE_NAME).put(data, 'appState');
-      }
-    }
-
-    if (data) {
-      state.items = data.items || [];
-      // Default category for existing items
-      state.items.forEach(item => {
-        if (!item.category) item.category = 'OTHERS';
-        if (!item.originalImages) {
-          item.originalImages = item.originalImage ? [item.originalImage] : [];
-        }
-      });
-      state.currentReviewer = data.currentReviewer || 'CEO';
-      state.nextId = data.nextId || (state.items.length + 1);
-      state.brandGuidePdf1 = data.brandGuidePdf1 || null;
-      state.brandGuidePdf2 = data.brandGuidePdf2 || null;
-      state.brandGuidePdf3 = data.brandGuidePdf3 || null;
-    }
-  } catch(e) {
-    console.error('Failed to load from IndexedDB', e);
+  const { data, error } = await supabase.from('brand_check_items').select('*').order('order_index', { ascending: true });
+  
+  if (error) {
+    console.error('Supabase fetch error:', error);
+    state.items = [];
+    return;
+  }
+  
+  if (data && data.length > 0) {
+    state.items = data.map(row => ({
+      id: row.id,
+      category: row.category || 'OTHERS',
+      title: row.title || '',
+      originalImages: row.original_images || [],
+      modifiedImage: row.modified_image || null,
+      memo: row.memo || '',
+      isMemoEditing: row.memo ? false : true,
+      status: row.status || 'pending',
+      reviews: row.reviews || [],
+      createdAt: row.created_at
+    }));
+    state.nextId = Math.max(0, ...state.items.map(i => i.id)) + 1;
+  } else {
     state.items = [];
   }
 }
@@ -187,9 +157,10 @@ function addItem() {
   }, 50);
 }
 
-function deleteItem(id) {
+async function deleteItem(id) {
   if (!confirm('このアイテムを削除しますか？')) return;
   state.items = state.items.filter(i => i.id !== id);
+  await supabase.from('brand_check_items').delete().eq('id', id);
   saveToStorage();
   renderAll();
   updateStats();
@@ -405,8 +376,24 @@ function renderMedia(src, isMain = false, extraAttrs = '') {
   }
 }
 
+// ── MEDIA UPLOAD TO SUPABASE ─────────────────────────────────
+async function uploadToSupabase(file) {
+  const ext = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${ext}`;
+  
+  const { data, error } = await supabase.storage.from('media').upload(fileName, file);
+  if (error) {
+    console.error('Upload error:', error);
+    showToast('アップロードに失敗しました', 'neutral');
+    return null;
+  }
+  
+  const { data: publicData } = supabase.storage.from('media').getPublicUrl(fileName);
+  return publicData.publicUrl;
+}
+
 // ── IMAGE UPLOAD ──────────────────────────────────────────────
-function handleFileSelect(id, field, fileOrFiles) {
+async function handleFileSelect(id, field, fileOrFiles) {
   const item = state.items.find(i => i.id === id);
   if (!item) return;
 
@@ -418,19 +405,16 @@ function handleFileSelect(id, field, fileOrFiles) {
     }
     
     if (field === 'originalImages') {
-      let loaded = 0;
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          item.originalImages.push(e.target.result);
-          loaded++;
-          if (loaded === files.length) {
-            saveToStorage();
-            refreshOriginalImagesArea(id);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      showToast('アップロード中...', 'neutral');
+      for (const file of files) {
+        const publicUrl = await uploadToSupabase(file);
+        if (publicUrl) {
+          item.originalImages.push(publicUrl);
+        }
+      }
+      saveToStorage();
+      refreshOriginalImagesArea(id);
+      showToast('アップロード完了', 'neutral');
       return;
     } else {
       fileOrFiles = files[0];
@@ -442,13 +426,15 @@ function handleFileSelect(id, field, fileOrFiles) {
     showToast('画像または動画ファイルを選択してください', 'neutral');
     return;
   }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    item[field] = e.target.result;
+  
+  showToast('アップロード中...', 'neutral');
+  const publicUrl = await uploadToSupabase(file);
+  if (publicUrl) {
+    item[field] = publicUrl;
     saveToStorage();
-    refreshUploadArea(id, field, e.target.result);
-  };
-  reader.readAsDataURL(file);
+    refreshUploadArea(id, field, publicUrl);
+    showToast('アップロード完了', 'neutral');
+  }
 }
 
 function clearOriginalImage(id, index) {
