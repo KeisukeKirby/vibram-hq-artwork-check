@@ -625,9 +625,13 @@ function showToast(msg, type = 'neutral') {
 
 // ── HELPERS ───────────────────────────────────────────────────
 function statusLabel(s) {
-  return { pending: '確認待ち', approved: '承認済', rejected: '非承認' }[s] || s;
+  switch (s) {
+    case 'pending': return t('status_pending');
+    case 'approved': return t('status_approved');
+    case 'rejected': return t('status_rejected');
+    default: return s;
+  }
 }
-
 function renderChips(item) {
   return item.reviews.map(r => {
     const cls = r.status === 'approved' ? 'chip-approved' : 'chip-rejected';
@@ -712,7 +716,7 @@ function renderItem(item, displayNum) {
       <div class="image-zone">
         <div class="image-zone-label">
           <span class="label-dot label-dot-original"></span>
-          オリジナル画像
+          ${t('label_original')}
         </div>
         ${renderOriginalImagesArea(item)}
       </div>
@@ -721,7 +725,7 @@ function renderItem(item, displayNum) {
       <div class="image-zone">
         <div class="image-zone-label">
           <span class="label-dot label-dot-modified"></span>
-          修正後画像
+          ${t('label_modified')}
         </div>
         ${renderUploadArea(item, 'modifiedImage', t('lightbox_modified'))}
       </div>
@@ -731,7 +735,7 @@ function renderItem(item, displayNum) {
         <div class="image-zone-label" style="display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span class="label-dot label-dot-memo"></span>
-            変更内容メモ
+            ${t('label_memo')}
           </div>
           <div>
             <button class="btn-memo-action" id="btn-memo-edit-${item.id}" onclick="toggleMemoEdit(${item.id}, true)" style="display: ${isEditing ? 'none' : 'inline-block'}; padding: 4px 12px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; color: #333;">${t('btn_edit')}</button>
@@ -752,7 +756,7 @@ function renderItem(item, displayNum) {
     <!-- Approval Row -->
     <div class="approval-section">
       <div class="approval-inner">
-        <div class="approval-label">承認アクション：</div>
+        <div class="approval-label">${t('action_approval')}</div>
         <div class="approval-buttons">
           <button
             class="btn-approve btn ${myReview?.status === 'approved' ? 'active' : ''}"
@@ -761,7 +765,7 @@ function renderItem(item, displayNum) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            承認
+            ${t('btn_approve')}
           </button>
           <button
             class="btn-reject btn ${myReview?.status === 'rejected' ? 'active' : ''}"
@@ -770,7 +774,7 @@ function renderItem(item, displayNum) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-            非承認
+            ${t('btn_reject')}
           </button>
         </div>
         <div class="approval-reviews" id="chips-${item.id}">
@@ -852,8 +856,8 @@ function renderOriginalImagesArea(item) {
       <div class="upload-area" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
         <div class="upload-placeholder" style="display:flex; flex-direction:column; align-items:center;">
           <div class="upload-icon">🖼️</div>
-          <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップで複数追加</div>
-          <div class="upload-text-sub">JPG, PNG, WebP, SVG, MP4 対応</div>
+          <div class="upload-text-main">${t('upload_instruction')}</div>
+          <div class="upload-text-sub">${t('upload_formats')}</div>
         </div>
       </div>
     `;
@@ -882,8 +886,8 @@ function renderUploadArea(item, field, label) {
       />
       <div class="upload-placeholder" style="display:${hasSrc ? 'none' : 'flex'};">
         <div class="upload-icon">🖼️</div>
-        <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップ</div>
-        <div class="upload-text-sub">JPG, PNG, WebP, SVG, MP4 対応</div>
+        <div class="upload-text-main">${t('upload_instruction_single')}</div>
+        <div class="upload-text-sub">${t('upload_formats')}</div>
       </div>
       ${renderMedia(hasSrc ? item[field] : '', true, `style="display:${hasSrc ? 'block' : 'none'};" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"`)}
       <div class="upload-overlay">
