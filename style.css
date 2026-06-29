@@ -896,3 +896,9 @@ body {
   border-color: var(--border-hover);
 }
 
+
+/* -- CAROUSEL NAVIGATION ----------------------------- */
+.carousel-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: rgba(255, 255, 255, 0.8); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: var(--transition); }
+.carousel-nav-btn:hover { background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.carousel-nav-btn.prev { left: 8px; }
+.carousel-nav-btn.next { right: 8px; }

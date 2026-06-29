@@ -453,12 +453,19 @@ function clearOriginalImage(id, index) {
 function setMainOriginalImage(id, index) {
   const item = state.items.find(i => i.id === id);
   if (item && item.originalImages && item.originalImages[index]) {
-    const temp = item.originalImages[0];
-    item.originalImages[0] = item.originalImages[index];
-    item.originalImages[index] = temp;
-    saveToStorage();
+    item._displayIndex = index;
     refreshOriginalImagesArea(id);
   }
+}
+
+function scrollOriginalImage(id, direction) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.originalImages || item.originalImages.length === 0) return;
+  const current = item._displayIndex || 0;
+  let next = current + direction;
+  if (next < 0) next = item.originalImages.length - 1;
+  if (next >= item.originalImages.length) next = 0;
+  setMainOriginalImage(id, next);
 }
 
 function refreshOriginalImagesArea(id) {
@@ -798,21 +805,30 @@ function renderOriginalImagesArea(item) {
   let html = `<div class="original-images-container" data-field="originalImages">`;
   
   if (hasImages) {
-    const mainImage = images[0];
+    const dIdx = item._displayIndex || 0;
+    const displayIndex = dIdx < images.length ? dIdx : 0;
+    const mainImage = images[displayIndex];
     
     html += `
       <div class="main-image-wrapper upload-area has-image" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
-        <img class="upload-preview" src="${escHtml(mainImage)}" style="display:block;" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', 0)" />
+        <img class="upload-preview" src="${escHtml(mainImage)}" style="display:block;" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})" />
         <div class="upload-overlay">
-          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', 0)">拡大</button>
-          <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, 0)">削除</button>
+          <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})">拡大</button>
+          <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, ${displayIndex})">削除</button>
         </div>
+        ${images.length > 1 ? `
+        <button class="carousel-nav-btn prev" onclick="event.stopPropagation(); scrollOriginalImage(${item.id}, -1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button class="carousel-nav-btn next" onclick="event.stopPropagation(); scrollOriginalImage(${item.id}, 1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        ` : ''}
       </div>
       <div class="thumbnails-container">
         ${images.map((src, idx) => `
-          <div class="thumbnail-wrapper ${idx === 0 ? 'active' : ''}" onclick="setMainOriginalImage(${item.id}, ${idx})">
+          <div class="thumbnail-wrapper ${idx === displayIndex ? 'active' : ''}" onclick="setMainOriginalImage(${item.id}, ${idx})">
             <img src="${escHtml(src)}" />
-            <button class="thumb-delete-btn" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, ${idx})">✕</button>
           </div>
         `).join('')}
         <div class="thumbnail-add" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
