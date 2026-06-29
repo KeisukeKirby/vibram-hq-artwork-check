@@ -395,15 +395,25 @@ function toggleMemoEdit(id, isEditing) {
   }
 }
 
+// ── MEDIA HELPER ──────────────────────────────────────────────
+function renderMedia(src, isMain = false, extraAttrs = '') {
+  if (!src) return '';
+  if (src.startsWith('data:video/')) {
+    return `<video ${isMain ? 'class="upload-preview"' : ''} src="${escHtml(src)}" style="display:block; object-fit: cover;" ${isMain ? 'controls' : 'autoplay muted loop playsinline'} ${extraAttrs}></video>`;
+  } else {
+    return `<img ${isMain ? 'class="upload-preview"' : ''} src="${escHtml(src)}" style="display:block; object-fit: cover;" ${extraAttrs} />`;
+  }
+}
+
 // ── IMAGE UPLOAD ──────────────────────────────────────────────
 function handleFileSelect(id, field, fileOrFiles) {
   const item = state.items.find(i => i.id === id);
   if (!item) return;
 
   if (fileOrFiles instanceof FileList || Array.isArray(fileOrFiles)) {
-    const files = Array.from(fileOrFiles).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(fileOrFiles).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
     if (files.length === 0) {
-      showToast('画像ファイルを選択してください', 'neutral');
+      showToast('画像または動画ファイルを選択してください', 'neutral');
       return;
     }
     
@@ -428,8 +438,8 @@ function handleFileSelect(id, field, fileOrFiles) {
   }
 
   const file = fileOrFiles;
-  if (!file || !file.type.startsWith('image/')) {
-    showToast('画像ファイルを選択してください', 'neutral');
+  if (!file || (!file.type.startsWith('image/') && !file.type.startsWith('video/'))) {
+    showToast('画像または動画ファイルを選択してください', 'neutral');
     return;
   }
   const reader = new FileReader();
@@ -539,11 +549,24 @@ function openLightboxById(id, field, label, index = 0) {
 }
 
 function openLightbox(src, caption) {
-  document.getElementById('lightboxImg').src = src;
+  const img = document.getElementById('lightboxImg');
+  const vid = document.getElementById('lightboxVideo');
+  if (src.startsWith('data:video/')) {
+    img.style.display = 'none';
+    vid.src = src;
+    vid.style.display = 'block';
+  } else {
+    vid.style.display = 'none';
+    vid.pause();
+    img.src = src;
+    img.style.display = 'block';
+  }
   document.getElementById('lightboxCaption').textContent = caption;
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLightbox() {
+  const vid = document.getElementById('lightboxVideo');
+  vid.pause();
   document.getElementById('lightbox').classList.remove('open');
 }
 document.addEventListener('keydown', (e) => {
@@ -811,7 +834,7 @@ function renderOriginalImagesArea(item) {
     
     html += `
       <div class="main-image-wrapper upload-area has-image" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
-        <img class="upload-preview" src="${escHtml(mainImage)}" style="display:block;" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})" />
+        ${renderMedia(mainImage, true, `onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})"`)}
         <div class="upload-overlay">
           <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, 'originalImages', 'オリジナル', ${displayIndex})">拡大</button>
           <button class="upload-overlay-btn danger" onclick="event.stopPropagation(); clearOriginalImage(${item.id}, ${displayIndex})">削除</button>
@@ -828,7 +851,7 @@ function renderOriginalImagesArea(item) {
       <div class="thumbnails-container">
         ${images.map((src, idx) => `
           <div class="thumbnail-wrapper ${idx === displayIndex ? 'active' : ''}" onclick="setMainOriginalImage(${item.id}, ${idx})">
-            <img src="${escHtml(src)}" />
+            ${renderMedia(src, false)}
           </div>
         `).join('')}
         <div class="thumbnail-add" onclick="triggerUpload(event, ${item.id}, 'originalImages')">
@@ -842,13 +865,13 @@ function renderOriginalImagesArea(item) {
         <div class="upload-placeholder" style="display:flex; flex-direction:column; align-items:center;">
           <div class="upload-icon">🖼️</div>
           <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップで複数追加</div>
-          <div class="upload-text-sub">JPG, PNG, WebP, SVG 対応</div>
+          <div class="upload-text-sub">JPG, PNG, WebP, SVG, MP4 対応</div>
         </div>
       </div>
     `;
   }
   
-  html += `<input type="file" class="upload-input" multiple accept="image/*" id="file-${item.id}-originalImages" onchange="handleFileSelect(${item.id}, 'originalImages', this.files)" />`;
+  html += `<input type="file" class="upload-input" multiple accept="image/*,video/*" id="file-${item.id}-originalImages" onchange="handleFileSelect(${item.id}, 'originalImages', this.files)" />`;
   html += `</div>`;
   
   return html;
@@ -865,22 +888,16 @@ function renderUploadArea(item, field, label) {
       <input
         type="file"
         class="upload-input"
-        accept="image/*"
+        accept="image/*,video/*"
         id="file-${item.id}-${field}"
         onchange="handleFileSelect(${item.id}, '${field}', this.files[0])"
       />
       <div class="upload-placeholder" style="display:${hasSrc ? 'none' : 'flex'};">
         <div class="upload-icon">🖼️</div>
         <div class="upload-text-main">クリックまたはドラッグ&amp;ドロップ</div>
-        <div class="upload-text-sub">JPG, PNG, WebP, SVG 対応</div>
+        <div class="upload-text-sub">JPG, PNG, WebP, SVG, MP4 対応</div>
       </div>
-      <img
-        class="upload-preview"
-        src="${hasSrc ? escHtml(item[field]) : ''}"
-        alt="${label}"
-        style="display:${hasSrc ? 'block' : 'none'};"
-        onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"
-      />
+      ${renderMedia(hasSrc ? item[field] : '', true, `style="display:${hasSrc ? 'block' : 'none'};" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')"`)}
       <div class="upload-overlay">
         <button class="upload-overlay-btn" onclick="event.stopPropagation(); openLightboxById(${item.id}, '${field}', '${label}')">拡大</button>
         <button class="upload-overlay-btn" onclick="event.stopPropagation(); triggerUpload(event, ${item.id}, '${field}')">画像を変更</button>
